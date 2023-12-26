@@ -1,0 +1,210 @@
+version: "3.9"
+services:
+  namedzeus-database:
+    image: namedzeus/namedzeus-database:latest
+    container_name: namedzeus-database
+    pull_policy: always
+    hostname: database
+    restart: unless-stopped
+    networks:
+      - namedzeus-network
+    volumes:
+      - namedzeus-database:/var/lib/mysql
+    stdin_open: false
+    tty: false
+    secrets:
+      - root_password
+      - namedzeus_password
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/root_password
+      MYSQL_PASSWORD_FILE: /run/secrets/namedzeus_password
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100k"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "healthy"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+      start_period: 60s
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  namedzeus-web:
+    image: namedzeus/namedzeus-web:latest
+    container_name: namedzeus-web
+    pull_policy: always
+    hostname: web
+    depends_on:
+      namedzeus-database:
+        condition: service_healthy
+    restart: unless-stopped
+    cap_add:
+      - SYS_NICE
+    extra_hosts:
+      - "loopback:host-gateway"
+    networks:
+      - namedzeus-network
+    volumes:
+      - namedzeus-licenses:/opt/namedzeus/license:rw
+      - namedzeus-snapshots:/opt/namedzeus/database/snapshots:rw
+    stdin_open: false
+    tty: false
+    secrets:
+      - main_key
+      - pusher_key
+      - pusher_secret
+      - namedzeus_password
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100k"
+    healthcheck:
+      test: ["CMD", "netstat", "-a", "-p", "TCP", "-nl", "|", "grep", "0.0.0.0:80"]
+      interval: 10s
+      timeout: 30s
+      retries: 15
+      start_period: 40s
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  namedzeus-reverse-proxy:
+    image: namedzeus/namedzeus-reverse-proxy:latest
+    container_name: namedzeus-reverse-proxy
+    pull_policy: always
+    hostname: reverse-proxy
+    restart: unless-stopped
+    depends_on:
+      - namedzeus-web
+    ports:
+      - 443:443
+    stdin_open: false
+    tty: false
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100k"
+    networks:
+      - namedzeus-network
+    healthcheck:
+      test: ["CMD", "netstat", "-a", "-p", "TCP", "-nl", "|", "grep", "0.0.0.0:443"]
+      interval: 10s
+      timeout: 30s
+      retries: 15
+      start_period: 40s
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  namedzeus-cache:
+    image: namedzeus/namedzeus-cache:latest
+    container_name: namedzeus-cache
+    pull_policy: always
+    hostname: cache
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100k"
+    networks:
+      - namedzeus-network
+    stdin_open: false
+    tty: false
+    healthcheck:
+      test: ["CMD", "redis-cli","ping"]
+      interval: 10s
+      timeout: 30s
+      retries: 15
+      start_period: 40s
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          memory: 350M
+        reservations:
+          memory: 20M
+
+  namedzeus-queue:
+    image: namedzeus/namedzeus-queue:latest
+    container_name: namedzeus-queue
+    pull_policy: always
+    hostname: queue
+    restart: unless-stopped
+    networks:
+      - namedzeus-network
+    stdin_open: false
+    tty: false
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100k"
+    healthcheck:
+      test: [ "CMD", "netstat", "-a", "-p", "TCP", "-nl", "|", "grep", "0.0.0.0:5672" ]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          memory: 350M
+        reservations:
+          memory: 20M
+
+  namedzeus-logs:
+    image: namedzeus/namedzeus-logs:latest
+    container_name: namedzeus-logs
+    pull_policy: always
+    hostname: logs
+    restart: unless-stopped
+    depends_on:
+      - namedzeus-database
+    networks:
+      - namedzeus-network
+    ports:
+      - 514:514/udp
+    environment:
+      - ALERTS_PORT=514
+    stdin_open: false
+    tty: false
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100k"
+    healthcheck:
+      test:
+        ["CMD", "netstat", "-a", "-p", "TCP", "-nl", "|", "grep", "0.0.0.0:514"]
+      interval: 1m30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      mode: replicated
+      replicas: 1
+
+networks:
+  namedzeus-network:
+
+volumes:
+  namedzeus-database:
+  namedzeus-licenses:
+  namedzeus-snapshots:
+
+secrets:
+  main_key:
+    file: /opt/namedzeus/secrets/main_key
+  pusher_key:
+    file: /opt/namedzeus/secrets/pusher_key
+  pusher_secret:
+    file: /opt/namedzeus/secrets/pusher_secret
+  root_password:
+    file: /opt/namedzeus/secrets/root_password
+  namedzeus_password:
+    file: /opt/namedzeus/secrets/namedzeus_password
+
