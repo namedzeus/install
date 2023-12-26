@@ -16,18 +16,20 @@ In view of the great complexity in managing network rules and policies in firewa
 
 ## Install instructions
 
+We offer two method to you get up and running the NameZeus into your infrastructure:
+
 > *Notice that is an alpha version yet*
 
 <details>
   <summary style="font-size: 20px;"><strong>Install using Docker Compose</strong></summary>
 
-  ### 1° - Creating project folder
+  #### 1° - Creating project folder
 
   ```bash
   mkdir -p /opt/namedzeus/secrets/
   ```
 
-  ### 2° - Creating the secrets
+  #### 2° - Creating the secrets
 
   ```bash
   openssl rand -base64 32 > /opt/namedzeus/secrets/main_key
@@ -37,13 +39,13 @@ In view of the great complexity in managing network rules and policies in firewa
   openssl rand -base64 32 > /opt/namedzeus/secrets/namedzeus_password
   ```
 
-  ### 3° - Adding the project composition
+  #### 3° - Adding the project composition
 
   ```bash
   cat > /opt/namedzeus/docker-compose.yml
   ```
 
-  ### 4° - Running project
+  #### 4° - Running project
 
   ```bash
   docker compose -f /opt/namedzeus/docker-compose.yml up -d
@@ -53,13 +55,13 @@ In view of the great complexity in managing network rules and policies in firewa
 <details>
   <summary style="font-size: 20px;"><strong>Install using Docker Swarm</strong></summary>
 
-  # 1° - Creating project folder
+  #### 1° - Creating project folder
 
   ```bash
   mkdir -p /opt/namedzeus/
   ```
 
-  ### 2° - Creating the secrets
+  #### 2° - Creating the secrets
 
   ```bash
   openssl rand -base64 32 | docker secret create main_key -
@@ -69,13 +71,13 @@ In view of the great complexity in managing network rules and policies in firewa
   openssl rand -base64 32 | docker secret create namedzeus_password -
   ```
 
-  ### 3° - Adding the project composition
+  #### 3° - Adding the project composition
 
   ```bash
   cat > /opt/namedzeus/docker-swarm.yml
   ```
 
-  ### 4° - Running project
+  #### 4° - Running project
 
   ```bash
   docker stack deploy -c /opt/namedzeus/docker-swarm.yml namedzeus
