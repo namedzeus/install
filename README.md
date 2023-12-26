@@ -18,12 +18,8 @@ In view of the great complexity in managing network rules and policies in firewa
 
 > *Notice that is an alpha version yet*
 
-<details open>
-  <summary style="font-size: 20px;"><strong>Using Docker Compose</strong></summary>
-
-  > [!IMPORTANT]
-  >
-  > Run all commands as root
+<details>
+  <summary style="font-size: 20px;"><strong>Install using Docker Compose</strong></summary>
 
   ### 1° - Creating project folder
 
@@ -47,7 +43,6 @@ In view of the great complexity in managing network rules and policies in firewa
   cat > /opt/namedzeus/docker-compose.yml
   ```
 
-
   ### 4° - Running project
 
   ```bash
@@ -56,13 +51,9 @@ In view of the great complexity in managing network rules and policies in firewa
 </details>
 
 <details>
-  <summary style="font-size: 20px;"><strong>Using Docker Swarm</strong></summary>
+  <summary style="font-size: 20px;"><strong>Install using Docker Swarm</strong></summary>
 
-  > [!IMPORTANT]
-  >
-  > Run all commands as root
-
-  ### 1° - Creating project folder
+  # 1° - Creating project folder
 
   ```bash
   mkdir -p /opt/namedzeus/
